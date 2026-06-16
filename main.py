@@ -1,4 +1,3 @@
-```python
 import os
 import json
 import requests
@@ -6,7 +5,7 @@ from datetime import datetime, timedelta
 from spotipy import Spotify
 from spotipy.oauth2 import SpotifyClientCredentials
 
-# Spotify authentication
+# Spotify login
 spotify = Spotify(
     auth_manager=SpotifyClientCredentials(
         client_id=os.environ["SPOTIFY_CLIENT_ID"],
@@ -16,18 +15,22 @@ spotify = Spotify(
 
 WEBHOOK_URL = os.environ["DISCORD_WEBHOOK_URL"]
 
-# Load artists
+# Load artist list
 with open("artists.json", "r", encoding="utf-8") as f:
     artists = json.load(f)
 
-# Check releases from the last 14 days
+# Look back 14 days
 cutoff_date = datetime.now() - timedelta(days=14)
 
 new_releases = []
 seen_albums = set()
 
 for artist_name in artists:
+
     try:
+        print(f"Checking {artist_name}...")
+
+        # Find artist
         results = spotify.search(
             q=f"artist:{artist_name}",
             type="artist",
@@ -35,11 +38,12 @@ for artist_name in artists:
         )
 
         if not results["artists"]["items"]:
+            print(f"Couldn't find {artist_name}")
             continue
 
-        artist = results["artists"]["items"][0]
-        artist_id = artist["id"]
+        artist_id = results["artists"]["items"][0]["id"]
 
+        # Get albums and singles
         albums = spotify.artist_albums(
             artist_id,
             album_type="album,single",
@@ -56,6 +60,7 @@ for artist_name in artists:
 
             release_date = album["release_date"]
 
+            # Handle YYYY-MM-DD, YYYY-MM, and YYYY
             try:
                 released = datetime.strptime(release_date, "%Y-%m-%d")
             except:
@@ -64,6 +69,7 @@ for artist_name in artists:
                 except:
                     released = datetime.strptime(release_date, "%Y")
 
+            # Only include recent releases
             if released >= cutoff_date:
 
                 image_url = None
@@ -78,13 +84,15 @@ for artist_name in artists:
                 })
 
     except Exception as e:
-        print(f"Error with {artist_name}: {e}")
+        print(f"Skipping {artist_name}: {e}")
+        continue
 
 # Sort newest first
 new_releases.sort(key=lambda x: x["date"], reverse=True)
 
-# Nothing found
+# Nothing released
 if not new_releases:
+
     requests.post(
         WEBHOOK_URL,
         json={
@@ -92,8 +100,9 @@ if not new_releases:
         }
     )
 
-# Send embeds
+# Send release embeds
 else:
+
     for release in new_releases:
 
         embed = {
@@ -115,4 +124,5 @@ else:
                 "embeds": [embed]
             }
         )
-```
+
+print("Done!")
