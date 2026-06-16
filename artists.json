@@ -1,9 +1,18 @@
 [
-  "aespa",
-  "Malcolm Todd",
-  "STAYC",
-  "LE SSERAFIM",
-  "bixby",
-  "Starfall",
-  "keshi"
+  {
+    "name": "STAYC",
+    "id": "01XYiBYaoMJcNhPokrg0l0"
+  },
+  {
+    "name": "Malcolm Todd",
+    "id": "7eKkW1zo5uzW8kUntiiBvz"
+  },
+  {
+    "name": "LE SSERAFIM",
+    "id": "4SpbR6yFEvexJuaBpgAU5p"
+  },
+  {
+    "name": "keshi",
+    "id": "3pc0bOVB5whxmD50W79wwO"
+  }
 ]
