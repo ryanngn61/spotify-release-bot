@@ -2,7 +2,7 @@ name: Weekly Release Check
 
 on:
   schedule:
-    - cron: '42 21 * * 2'
+    - cron: '50 21 * * 2'
   workflow_dispatch:
 
 jobs:
