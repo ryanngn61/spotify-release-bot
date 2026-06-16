@@ -1,4 +1,3 @@
-```python
 import os
 import json
 import requests
@@ -23,23 +22,13 @@ cutoff_date = datetime.now() - timedelta(days=14)
 new_releases = []
 seen_albums = set()
 
-for artist_name in artists:
+for artist in artists:
+
+    artist_name = artist["name"]
+    artist_id = artist["id"]
 
     try:
         print(f"Checking {artist_name}...")
-
-        results = spotify.search(
-            q=f"artist:{artist_name}",
-            type="artist",
-            limit=1
-        )
-
-        if not results["artists"]["items"]:
-            print(f"Couldn't find {artist_name}")
-            continue
-
-        artist = results["artists"]["items"][0]
-        artist_id = artist["id"]
 
         albums = spotify.artist_albums(
             artist_id,
@@ -67,7 +56,7 @@ for artist_name in artists:
             if released >= cutoff_date:
 
                 image_url = None
-                if len(album["images"]) > 0:
+                if album["images"]:
                     image_url = album["images"][0]["url"]
 
                 new_releases.append({
@@ -80,14 +69,15 @@ for artist_name in artists:
     except Exception as e:
         print(f"Skipping {artist_name}: {e}")
 
-# newest first
 new_releases.sort(key=lambda x: x["date"], reverse=True)
 
 if not new_releases:
 
     requests.post(
         WEBHOOK_URL,
-        json={"content": "🎵 No new releases in the last 14 days."}
+        json={
+            "content": "🎵 No new releases in the last 14 days."
+        }
     )
 
 else:
@@ -106,9 +96,9 @@ else:
         "color": 5763719
     }
 
-    # Use the first release's artwork as the big image
+    # Show artwork from the newest release
     if new_releases[0]["image"]:
-        embed["thumbnail"] = {
+        embed["image"] = {
             "url": new_releases[0]["image"]
         }
 
@@ -120,4 +110,3 @@ else:
     )
 
 print("Done!")
-```
