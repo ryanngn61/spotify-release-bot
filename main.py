@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from spotipy import Spotify
 from spotipy.oauth2 import SpotifyClientCredentials
 
+# Spotify login
 spotify = Spotify(
     auth_manager=SpotifyClientCredentials(
         client_id=os.environ["SPOTIFY_CLIENT_ID"],
@@ -14,9 +15,11 @@ spotify = Spotify(
 
 WEBHOOK_URL = os.environ["DISCORD_WEBHOOK_URL"]
 
+# Load artists
 with open("artists.json", "r", encoding="utf-8") as f:
     artists = json.load(f)
 
+# Look back 14 days
 cutoff_date = datetime.now() - timedelta(days=14)
 
 new_releases = []
@@ -38,6 +41,7 @@ for artist in artists:
 
         for album in albums["items"]:
 
+            # Skip duplicates
             if album["id"] in seen_albums:
                 continue
 
@@ -45,6 +49,7 @@ for artist in artists:
 
             release_date = album["release_date"]
 
+            # Handle YYYY-MM-DD, YYYY-MM, and YYYY formats
             try:
                 released = datetime.strptime(release_date, "%Y-%m-%d")
             except:
@@ -53,6 +58,7 @@ for artist in artists:
                 except:
                     released = datetime.strptime(release_date, "%Y")
 
+            # Only include recent releases
             if released >= cutoff_date:
 
                 image_url = None
@@ -69,6 +75,7 @@ for artist in artists:
     except Exception as e:
         print(f"Skipping {artist_name}: {e}")
 
+# Sort newest first
 new_releases.sort(key=lambda x: x["date"], reverse=True)
 
 if not new_releases:
@@ -82,31 +89,35 @@ if not new_releases:
 
 else:
 
-    description = ""
-
-    for release in new_releases:
-        description += (
-            f"• **{release['artist']}** — {release['album']}\n"
-            f"Released: {release['date']}\n\n"
-        )
-
-    embed = {
-        "title": "🎵 Weekly Music Update",
-        "description": description,
-        "color": 5763719
-    }
-
-    # Show artwork from the newest release
-    if new_releases[0]["image"]:
-        embed["image"] = {
-            "url": new_releases[0]["image"]
-        }
-
+    # Header message
     requests.post(
         WEBHOOK_URL,
         json={
-            "embeds": [embed]
+            "content": "🎵 **Weekly Music Update**"
         }
     )
+
+    # One embed per release
+    for release in new_releases:
+
+        embed = {
+            "title": release["album"],
+            "description":
+                f"**Artist:** {release['artist']}\n"
+                f"**Released:** {release['date']}",
+            "color": 5763719
+        }
+
+        if release["image"]:
+            embed["image"] = {
+                "url": release["image"]
+            }
+
+        requests.post(
+            WEBHOOK_URL,
+            json={
+                "embeds": [embed]
+            }
+        )
 
 print("Done!")
